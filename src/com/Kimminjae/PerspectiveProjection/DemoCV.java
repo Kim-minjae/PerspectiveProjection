@@ -1,64 +1,110 @@
 package com.Kimminjae.PerspectiveProjection;
 
+import static org.bytedeco.javacpp.helper.opencv_core.CV_RGB;
 import static org.bytedeco.javacpp.opencv_core.*;
 import static org.bytedeco.javacpp.opencv_imgproc.*;
 
+import org.bytedeco.javacpp.IntPointer;
 import org.bytedeco.javacpp.Loader;
 import org.bytedeco.javacpp.Pointer;
 
+
 import static org.bytedeco.javacpp.opencv_imgcodecs.*;
+
 
 import org.bytedeco.javacpp.opencv_core.CvPoint;
 import org.bytedeco.javacpp.opencv_core.CvSeq;
 import org.bytedeco.javacpp.opencv_core.IplImage;
-import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacv.CanvasFrame;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameGrabber;
 import org.bytedeco.javacv.OpenCVFrameConverter;
+import org.bytedeco.javacv.OpenCVFrameGrabber;
+import org.bytedeco.javacv.OpenCVFrameConverter.ToIplImage;
 
 
 
 public class DemoCV {
-	
-    public static void main(String[] args) throws Exception {  
+	 static OpenCVFrameConverter.ToIplImage converter = new OpenCVFrameConverter.ToIplImage();
+	 
+    public static void main(String[] args) throws Exception
+    {  
     	
-    	CvMemStorage storage = null;
+    	CvMemStorage storage = cvCreateMemStorage(10000);
     	CvSeq lines = new CvSeq();
-    	CvSeq squares1 = cvCreateSeq(0, Loader.sizeof(CvSeq.class), Loader.sizeof(CvPoint.class), storage);
-
-    	square detector = new square();
+    	@SuppressWarnings("resource")
+		CvSeq squares1 = new CvSeq();
+    	
     	
         FrameGrabber grabber = FrameGrabber.createDefault(0);
         grabber.start();
-
-        OpenCVFrameConverter.ToIplImage converter = new OpenCVFrameConverter.ToIplImage();
-
+        
+       
+        
        
         IplImage grabbedImage = converter.convert(grabber.grab());
         int width  = grabbedImage.width();
         int height = grabbedImage.height();
-
+        int i =0;
+        boolean move = true;
         CanvasFrame frame = new CanvasFrame("My Face", CanvasFrame.getDefaultGamma()/grabber.getGamma());
 
         while (frame.isVisible() && (grabbedImage = converter.convert(grabber.grab())) != null) {
+        	if(i>grabbedImage.width() && move){
+        		i=0;
+        	}
+        	else if(move)
+        	{
+        		i++;
+        	}
         	
         	IplImage gray = cvCreateImage(cvGetSize(grabbedImage), 8, 1);
         	cvCvtColor(grabbedImage, gray, CV_BGR2GRAY);
+        	cvCanny(gray, gray, 50, 100, 3);
+        	cvCvtColor(gray,grabbedImage,CV_GRAY2BGR);
+        	BorderLine liner = new BorderLine(0,0,grabbedImage);
+        	liner.moveAndDraw(grabbedImage,grabbedImage,i);
         	FindAndDrawLines(grabbedImage,lines,gray,grabbedImage);
-        	
-        	squares1 = detector.findSquares4(grabbedImage, storage);
-        	detector.drawSquares(grabbedImage,squares1);
-        	
-            Frame rotatedFrame = converter.convert(grabbedImage);
-            
-            
+            Frame rotatedFrame = converter.convert(gray);
+        
+            frame.waitKey(30);
+                           
             frame.showImage(rotatedFrame);
+            
+
         }
         frame.dispose();
+        
         grabber.stop();
     }
+   
     
+    public static void captureFrame() {
+    	OpenCVFrameGrabber grabber2 = new OpenCVFrameGrabber(0);
+    	try
+    	{
+    		grabber2.start();
+    		IplImage img = converter.convert(grabber2.grab());
+    		
+    		if(img != null)
+    		{
+    			cvSaveImage("capture.jpg", img);
+    		}
+    	}
+    	catch(Exception ae)
+    	{
+    		ae.printStackTrace();
+    	}
+    }
+ 
+    public static void boderDetect(IplImage src , CvSeq lines){
+    	//the longest line is the border of projected image
+    	
+    	
+    	
+    	
+    	
+    }
 	public static void FindAndDrawLines(IplImage src, CvSeq lines ,IplImage dst, IplImage colorDst)
     {
 		
@@ -68,9 +114,8 @@ public class DemoCV {
             System.out.println("Couldn't load source image.");
             return;
         }
-
-        cvCanny(src, dst, 50, 100, 3);
-        cvCvtColor(dst, colorDst, CV_GRAY2BGR);
+//        cvCanny(src, dst, 50, 100, 3);
+//        cvCvtColor(dst, colorDst, CV_GRAY2BGR);
         
         lines = cvHoughLines2(dst, storage, CV_HOUGH_PROBABILISTIC, 1, Math.PI / 180, 40, 50, 10, 0, CV_PI);
 
@@ -115,21 +160,6 @@ public class DemoCV {
 //            System.out.println("\t theta= " + theta);
 //            cvLine(colorDst, pt1, pt2, CV_RGB(255, 0, 0), 3, CV_AA, 0);
 //        }
-    }
-	
-	public static void FindSquers(IplImage src, IplImage dst, CvSeq squares)
-	{
-		int thresh = 50;
-		CvMemStorage storage = null;
-		
-	}
-	public static  double angle(CvPoint pt1, CvPoint pt2, CvPoint pt0) {
-        double dx1 = pt1.x() - pt0.x();
-        double dy1 = pt1.y() - pt0.y();
-        double dx2 = pt2.x() - pt0.x();
-        double dy2 = pt2.y() - pt0.y();
-
-        return (dx1*dx2 + dy1*dy2) / Math.sqrt((dx1*dx1 + dy1*dy1) * (dx2*dx2 + dy2*dy2) + 1e-10);
     }
 	
 }

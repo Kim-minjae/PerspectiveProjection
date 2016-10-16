@@ -25,7 +25,7 @@ import static org.bytedeco.javacpp.opencv_imgcodecs.*;
  *
  * @author geir.ruud@digitalinferno.com
  */
-public class square {
+public class Square {
 
     int thresh = 50;
     IplImage img = null;
@@ -110,6 +110,7 @@ public class square {
                     // approximate contour with accuracy proportional
                     // to the contour perimeter
                     // Java translation: moved into the loop
+                	
                     CvSeq result = cvApproxPoly(contours, Loader.sizeof(CvContour.class), storage, CV_POLY_APPROX_DP, cvContourPerimeter(contours)*0.02, 0);
                     // square contours should have 4 vertices after approximation
                     // relatively large area (to filter out noisy contours)
@@ -260,7 +261,6 @@ public class square {
 
         for(i = 0; i < names.length; i++) {
             // load i-th image
-
             // Java translation
             String filePathAndName = Square.class.getClassLoader().getResource(names[i]).getPath();
             filePathAndName = filePathAndName == null || filePathAndName.isEmpty() ? names[i] : filePathAndName;
