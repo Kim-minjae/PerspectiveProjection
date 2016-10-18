@@ -43,11 +43,13 @@ public class DemoCV {
         
        
         IplImage grabbedImage = converter.convert(grabber.grab());
-        int width  = grabbedImage.width();
-        int height = grabbedImage.height();
         int i =0;
         boolean move = true;
-        CanvasFrame frame = new CanvasFrame("My Face", CanvasFrame.getDefaultGamma()/grabber.getGamma());
+        
+        //savepoint of the longest i
+        int borderpoint = 0;
+        
+        CanvasFrame frame = new CanvasFrame("originalFrame", CanvasFrame.getDefaultGamma()/grabber.getGamma());
 
         while (frame.isVisible() && (grabbedImage = converter.convert(grabber.grab())) != null) {
         	if(i>grabbedImage.width() && move){
@@ -63,19 +65,27 @@ public class DemoCV {
         	cvCanny(gray, gray, 50, 100, 3);
         	cvCvtColor(gray,grabbedImage,CV_GRAY2BGR);
         	BorderLine liner = new BorderLine(0,0,grabbedImage);
-        	liner.moveAndDraw(grabbedImage,grabbedImage,i);
-        	FindAndDrawLines(grabbedImage,lines,gray,grabbedImage);
+        	borderpoint = liner.moveAndDraw(grabbedImage,grabbedImage,i,move);
+        	
+        	if( borderpoint != -1)
+        	{
+        		move = false;
+        	}
+        		
+        		
+        	
+        	FindAndDrawLines(gray,lines,gray,grabbedImage);
             Frame rotatedFrame = converter.convert(gray);
         
             frame.waitKey(30);
                            
             frame.showImage(rotatedFrame);
             
-
+            
         }
         frame.dispose();
         
-        grabber.stop();
+        grabber.stop();	
     }
    
     
@@ -130,36 +140,12 @@ public class DemoCV {
 
             cvLine(colorDst, pt1, pt2, CV_RGB(255, 0, 0), 3, CV_AA, 0); // draw the segment on the image
         }
-        
-//        lines = cvHoughLines2(dst, storage, CV_HOUGH_MULTI_SCALE, 1, Math.PI / 180, 40, 1, 1, 0, CV_PI);
-//        for (int i = 0; i < lines.total(); i++) {
-//            CvPoint2D32f point = new CvPoint2D32f(cvGetSeqElem(lines, i));
-//
-//            float rho=point.x();
-//            float theta=point.y();
-//
-//            double a = Math.cos((double) theta), b = Math.sin((double) theta);
-//            double x0 = a * rho, y0 = b * rho;
-//            CvPoint pt1 = cvPoint((int) Math.round(x0 + 1000 * (-b)), (int) Math.round(y0 + 1000 * (a))), pt2 = cvPoint((int) Math.round(x0 - 1000 * (-b)), (int) Math.round(y0 - 1000 * (a)));
-//            
-//            cvLine(colorDst, pt1, pt2, CV_RGB(0, 255, 0), 3, CV_AA, 0);
-//        }
-        
-//        lines = cvHoughLines2(dst, storage, CV_HOUGH_STANDARD, 1, Math.PI / 180, 90, 0, 0, 0, CV_PI);
-//        for (int i = 0; i < lines.total(); i++) {
-//            CvPoint2D32f point = new CvPoint2D32f(cvGetSeqElem(lines, i));
-//
-//            float rho=point.x();
-//            float theta=point.y();
-//
-//            double a = Math.cos((double) theta), b = Math.sin((double) theta);
-//            double x0 = a * rho, y0 = b * rho;
-//            CvPoint pt1 = cvPoint((int) Math.round(x0 + 1000 * (-b)), (int) Math.round(y0 + 1000 * (a))), pt2 = cvPoint((int) Math.round(x0 - 1000 * (-b)), (int) Math.round(y0 - 1000 * (a)));
-//            System.out.println("Line spotted: ");
-//            System.out.println("\t rho= " + rho);
-//            System.out.println("\t theta= " + theta);
-//            cvLine(colorDst, pt1, pt2, CV_RGB(255, 0, 0), 3, CV_AA, 0);
-//        }
     }
-	
+	public static double length(CvPoint pt1,CvPoint pt2)
+	{
+		double dx1 = pt1.x() - pt2.x();
+        double dy1 = pt1.y() - pt2.y();
+		
+		return Math.sqrt(dx1*dx1 + dy1*dy1 + 1e-10);
+	}
 }
